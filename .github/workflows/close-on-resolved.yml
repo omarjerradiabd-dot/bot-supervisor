@@ -1,0 +1,32 @@
+name: Close Issue When Resolved
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  close-if-resolved:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment and close if resolved
+        if: github.event.label.name == 'resolved'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = context.issue.number;
+
+            // Add comment
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body: "✅ This issue has been marked as **resolved** and will now be closed automatically."
+            });
+
+            // Close issue
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              state: "closed"
+            });
