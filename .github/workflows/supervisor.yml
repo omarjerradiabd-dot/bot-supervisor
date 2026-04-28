@@ -1,0 +1,13 @@
+name: Supervisor Listener
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  supervise:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Supervisor received a report
+        run: |
+          echo "✅ New bot report received by supervisor"
