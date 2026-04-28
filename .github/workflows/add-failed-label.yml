@@ -1,0 +1,21 @@
+name: Add Failed Label
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  label-failed:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add failed label to failure issues
+        if: contains(github.event.issue.title, 'Bot Failure')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['failed']
+            });
