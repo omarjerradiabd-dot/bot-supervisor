@@ -1,0 +1,60 @@
+name: Reopen Issue On Repeated Bot Failure
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  reopen-if-needed:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reopen matching closed issue
+        if: contains(github.event.issue.title, 'Bot Failure')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = context.payload.issue.title;
+
+            // Search for closed issues with the same title
+            const issues = await github.paginate(
+              github.rest.search.issuesAndPullRequests,
+              {
+                q: `repo:${context.repo.owner}/${context.repo.repo} "${title}" is:issue is:closed`
+              }
+            );
+
+            if (issues.length > 0) {
+              const issue = issues[0];
+
+              // Reopen the old issue
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'open'
+              });
+
+              // Add failed label
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: ['failed']
+              });
+
+              // Comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: '🚨 This bot has failed again. The issue was automatically reopened.'
+              });
+
+              // Close the new duplicate issue
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                state: 'closed'
+              });
+            }
